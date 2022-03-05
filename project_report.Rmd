@@ -1,18 +1,84 @@
 ---
-title: "R Notebook"
+title: "Practical Machine Learning | Course Project"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+The goal of this project is to predict the manner in which barbell lifts have been done correctly and incorrectly in 5 different ways.
+This is the "classe" variable in the training set. Details on the background and data can be found at [Coursera Project Instructions](https://www.coursera.org/learn/practical-machine-learning/supplement/PvInj/course-project-instructions-read-first%5D) or <http://groupware.les.inf.puc-rio.br/har>.
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = TRUE,
+	warning = FALSE
+)
 
-```{r}
-plot(cars)
+library(tidyverse)
+library(caret)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+The data can be found here: [training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and [testing](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv). The data consists of 160 variables and \~20.000 rows (training) and 20 rows (testing). We clean the data and remove:
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+* first 5 columns as they do not help predicting
+* columns without relevant content "", "#DIV/0!", ...
+* columns containing NA values
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r data, echo=FALSE}
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+
+training1 <- training %>% 
+    select(-X, # unsuitable predictor
+           -user_name, # unsuitable predictor
+           -raw_timestamp_part_1, # unsuitable predictor
+           -raw_timestamp_part_2, # unsuitable predictor
+           -cvtd_timestamp, # unsuitable predictor
+           -kurtosis_yaw_belt, # only "" and "#DIV/0!"
+           -skewness_yaw_belt, # only "" and "#DIV/0!"
+           -kurtosis_yaw_dumbbell, # only "" and "#DIV/0!"
+           -skewness_yaw_dumbbell, # only "" and "#DIV/0!"
+           -kurtosis_yaw_forearm, # only "" and "#DIV/0!"
+           -skewness_yaw_forearm, # only "" and "#DIV/0!
+           -amplitude_yaw_dumbbell, # only "" and "#DIV/0!"
+           -amplitude_yaw_forearm, # only "" and "#DIV/0!"
+           -amplitude_yaw_belt) # only "" and "#DIV/0!"
+
+training2 <- training1[, colSums(is.na(training1)) == 0]           
+
+# count unique values for each variable
+# test <- sort(sapply(lapply(training1, unique), length))
+
+testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+testing1 <- testing %>% 
+    select(-X, # unsuitable predictor
+           -user_name, # unsuitable predictor
+           -raw_timestamp_part_1, # unsuitable predictor
+           -raw_timestamp_part_2, # unsuitable predictor
+           -cvtd_timestamp, # unsuitable predictor
+           -kurtosis_yaw_belt, # only "" and "#DIV/0!"
+           -skewness_yaw_belt, # only "" and "#DIV/0!"
+           -kurtosis_yaw_dumbbell, # only "" and "#DIV/0!"
+           -skewness_yaw_dumbbell, # only "" and "#DIV/0!"
+           -kurtosis_yaw_forearm, # only "" and "#DIV/0!"
+           -skewness_yaw_forearm, # only "" and "#DIV/0!
+           -amplitude_yaw_dumbbell, # only "" and "#DIV/0!"
+           -amplitude_yaw_forearm, # only "" and "#DIV/0!"
+           -amplitude_yaw_belt) # only "" and "#DIV/0!"
+
+testing2 <- testing1[, colSums(is.na(testing1)) == 0] 
+
+```
+
+The outcome is in the variable "classe" (only training set) and is one out of "A", "B", "C", "D", "E".
+
+```{r train}
+#specify the cross-validation method
+ctrl <- trainControl(method = "cv", number = 5)
+
+fit <- train(classe ~., 
+             method="rpart", 
+             data =training2, 
+             trControl = ctrl,
+             na.action = na.exclude)
+```
