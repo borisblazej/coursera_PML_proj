@@ -1832,7 +1832,7 @@ rows (task/validation). We clean the data and remove:</p>
 <h2>3.1 Linear Model</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NwZWNpZnkgdGhlIGNyb3NzLXZhbGlkYXRpb24gbWV0aG9kXG5jdHJsIDwtIHRyYWluQ29udHJvbChtZXRob2QgPSBcImN2XCIsIG51bWJlciA9IDUpXG5cbmZpdF9saW5lYXIgPC0gdHJhaW4oY2xhc3NlIH4uLCBcbiAgICAgICAgICAgICBtZXRob2Q9XCJnbG1cIiwgXG4gICAgICAgICAgICAgZGF0YSA9dHJhaW5pbmdfZmluYWwsIFxuICAgICAgICAgICAgIHRyQ29udHJvbCA9IGN0cmwsXG4gICAgICAgICAgICAgbmEuYWN0aW9uID0gbmEuZXhjbHVkZSlcblxucHJlZGljdF9saW5lYXIgPC0gcHJlZGljdChmaXRfbGluZWFyLCB0ZXN0aW5nX2ZpbmFsKVxuXG5mYW5jeVJwYXJ0UGxvdChmaXRfbGluZWFyJGZpbmFsTW9kZWwpXG5cbmNtX2xpbmFyIDwtIGNvbmZ1c2lvbk1hdHJpeChwcmVkaWN0X2xpbmVhciwgdGVzdGluZ19maW5hbCRjbGFzc2UpXG5cbnBsb3QoY21fbGluYXIkdGFibGUsIFxuICAgICBjb2wgPSBjbV9saW5hciRieUNsYXNzLCBcbiAgICAgbWFpbiA9IHBhc3RlKFwiRGVjaXNpb24gVHJlZSAtIEFjY3VyYWN5ID1cIixcbiAgICAgICAgICAgICAgICAgIHJvdW5kKGNtX2xpbmFyJG92ZXJhbGxbJ0FjY3VyYWN5J10sIFxuICAgICAgICAgICAgICAgICAgICAgICAgNCkpKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI3NwZWNpZnkgdGhlIGNyb3NzLXZhbGlkYXRpb24gbWV0aG9kXG5jdHJsIDwtIHRyYWluQ29udHJvbChtZXRob2QgPSBcImN2XCIsIG51bWJlciA9IDUpXG5cbmZpdF9saW5lYXIgPC0gdHJhaW4oY2xhc3NlIH4uLCBcbiAgICAgICAgICAgICBtZXRob2Q9XCJnbG1cIiwgXG4gICAgICAgICAgICAgZGF0YSA9dHJhaW5pbmdfZmluYWwsIFxuICAgICAgICAgICAgIHRyQ29udHJvbCA9IGN0cmwsXG4gICAgICAgICAgICAgbmEuYWN0aW9uID0gbmEuZXhjbHVkZSlcbmBgYCJ9 -->
 <pre class="r"><code>#specify the cross-validation method
 ctrl &lt;- trainControl(method = &quot;cv&quot;, number = 5)
 
@@ -1840,23 +1840,21 @@ fit_linear &lt;- train(classe ~.,
              method=&quot;glm&quot;, 
              data =training_final, 
              trControl = ctrl,
-             na.action = na.exclude)
-
-predict_linear &lt;- predict(fit_linear, testing_final)
-
-fancyRpartPlot(fit_linear$finalModel)
-
-cm_linar &lt;- confusionMatrix(predict_linear, testing_final$classe)
-
-plot(cm_linar$table, 
-     col = cm_linar$byClass, 
-     main = paste(&quot;Decision Tree - Accuracy =&quot;,
-                  round(cm_linar$overall[&#39;Accuracy&#39;], 
-                        4)))</code></pre>
+             na.action = na.exclude)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRGVyIEJlZmVobCBcInJ0cmFpblwiIGlzdCBlbnR3ZWRlciBmYWxzY2ggZ2VzY2hyaWViZW4gb2Rlclxua29ubnRlIG5pY2h0IGdlZnVuZGVuIHdlcmRlbi5cbiJ9 -->
-<pre><code>Der Befehl &quot;rtrain&quot; ist entweder falsch geschrieben oder
-konnte nicht gefunden werden.</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiU29tZXRoaW5nIGlzIHdyb25nOyBhbGwgdGhlIEFjY3VyYWN5IG1ldHJpYyB2YWx1ZXMgYXJlIG1pc3Npbmc6XG4gICAgQWNjdXJhY3kgICAgICAgS2FwcGEgICAgXG4gTWluLiAgIDogTkEgICBNaW4uICAgOiBOQSAgXG4gMXN0IFF1LjogTkEgICAxc3QgUXUuOiBOQSAgXG4gTWVkaWFuIDogTkEgICBNZWRpYW4gOiBOQSAgXG4gTWVhbiAgIDpOYU4gICBNZWFuICAgOk5hTiAgXG4gM3JkIFF1LjogTkEgICAzcmQgUXUuOiBOQSAgXG4gTWF4LiAgIDogTkEgICBNYXguICAgOiBOQSAgXG4gTkEncyAgIDoxICAgICBOQSdzICAgOjEgICAgXG4ifQ== -->
+<pre><code>Something is wrong; all the Accuracy metric values are missing:
+    Accuracy       Kappa    
+ Min.   : NA   Min.   : NA  
+ 1st Qu.: NA   1st Qu.: NA  
+ Median : NA   Median : NA  
+ Mean   :NaN   Mean   :NaN  
+ 3rd Qu.: NA   3rd Qu.: NA  
+ Max.   : NA   Max.   : NA  
+ NA&#39;s   :1     NA&#39;s   :1    </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3I6IFN0b3BwaW5nXG4ifQ== -->
+<pre><code>Error: Stopping</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
