@@ -3,6 +3,8 @@ title: "Practical Machine Learning | Course Project"
 output: html_notebook
 ---
 
+# 1. Introduction
+
 The goal of this project is to predict the manner in which barbell lifts have been done correctly and incorrectly in 5 different ways.
 This is the "classe" variable in the training set. Details on the background and data can be found at [Coursera Project Instructions](https://www.coursera.org/learn/practical-machine-learning/supplement/PvInj/course-project-instructions-read-first%5D) or <http://groupware.les.inf.puc-rio.br/har>.
 
@@ -15,13 +17,17 @@ knitr::opts_chunk$set(
 
 library(tidyverse)
 library(caret)
+library(rattle)
 ```
 
-The data can be found here: [training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and [testing](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv). The data consists of 160 variables and \~20.000 rows (training) and 20 rows (testing). We clean the data and remove:
+# 2. Data
+
+The data can be found here: [training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and [testing](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv). The data consists of 160 variables and \~20.000 rows (training) and 20 rows (task/validation). We clean the data and remove:
 
 * first 5 columns as they do not help predicting
 * columns without relevant content "", "#DIV/0!", ...
 * columns containing NA values
+* columns containing "near zero variance"
 
 
 ```{r data, echo=FALSE}
@@ -43,14 +49,24 @@ training1 <- training %>%
            -amplitude_yaw_forearm, # only "" and "#DIV/0!"
            -amplitude_yaw_belt) # only "" and "#DIV/0!"
 
-training2 <- training1[, colSums(is.na(training1)) == 0]           
+training1$classe <- as.factor(training1$classe)
 
-# count unique values for each variable
-# test <- sort(sapply(lapply(training1, unique), length))
+training2 <- training1[, colSums(is.na(training1)) == 0]
+    
+NZV <- nearZeroVar(training2)
+training3 <- training2[, -NZV]
 
-testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+set.seed(666) 
+train_index <- createDataPartition(training3$classe, p = 0.7, list = FALSE)
 
-testing1 <- testing %>% 
+training_final <- training3[train_index,]
+testing_final <- training3[-train_index,]
+rm(training, training1, training2, training3)
+
+
+task <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+task1 <- task %>% 
     select(-X, # unsuitable predictor
            -user_name, # unsuitable predictor
            -raw_timestamp_part_1, # unsuitable predictor
@@ -66,19 +82,69 @@ testing1 <- testing %>%
            -amplitude_yaw_forearm, # only "" and "#DIV/0!"
            -amplitude_yaw_belt) # only "" and "#DIV/0!"
 
-testing2 <- testing1[, colSums(is.na(testing1)) == 0] 
+task2 <- task1[, colSums(is.na(task1)) == 0]
+
+NZV <- nearZeroVar(task2)
+task_final <- task2[, -NZV]
+
+rm(task, task1, task2)
+
+table(training_final$classe)
 
 ```
 
-The outcome is in the variable "classe" (only training set) and is one out of "A", "B", "C", "D", "E".
+The outcome is in the variable "classe" is one out of "A", "B", "C", "D", "E".
 
-```{r train}
+# 3. Modelling
+
+## 3.1 Linear Model
+
+```{r train linear}
 #specify the cross-validation method
 ctrl <- trainControl(method = "cv", number = 5)
 
-fit <- train(classe ~., 
-             method="rpart", 
-             data =training2, 
+fit_linear <- train(classe ~., 
+             method="glm", 
+             data =training_final, 
              trControl = ctrl,
              na.action = na.exclude)
+
+predict_linear <- predict(fit_linear, testing_final)
+
+fancyRpartPlot(fit_linear$finalModel)
+
+cm_linar <- confusionMatrix(predict_linear, testing_final$classe)
+
+plot(cm_linar$table, 
+     col = cm_linar$byClass, 
+     main = paste("Decision Tree - Accuracy =",
+                  round(cm_linar$overall['Accuracy'], 
+                        4)))
 ```
+
+
+## 3.2 Decision tree
+```{r train tree}
+#specify the cross-validation method
+ctrl <- trainControl(method = "cv", number = 5)
+
+fit_tree <- train(classe ~., 
+             method="rpart", 
+             data =training_final, 
+             trControl = ctrl,
+             na.action = na.exclude)
+
+predict_tree <- predict(fit_tree, testing_final)
+
+#fancyRpartPlot(fit_tree$finalModel)
+
+cm_tree <- confusionMatrix(predict_tree, testing_final$classe)
+
+plot(cm_tree$table, 
+     col = cm_tree$byClass, 
+     main = paste("Decision Tree - Accuracy =",
+                  round(cm_tree$overall['Accuracy'], 
+                        4)))
+```
+
+## 3.3 Random Forrest
