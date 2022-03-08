@@ -5,8 +5,14 @@ output: html_notebook
 
 # 1. Introduction
 
-The goal of this project is to predict the manner in which barbell lifts have been done correctly and incorrectly in 5 different ways.
-This is the "classe" variable in the training set. Details on the background and data can be found at [Coursera Project Instructions](https://www.coursera.org/learn/practical-machine-learning/supplement/PvInj/course-project-instructions-read-first%5D) or <http://groupware.les.inf.puc-rio.br/har>.
+The goal of this project is to predict the manner in which barbell lifts have been done correctly or incorrectly in 5 different ways.
+This is the "classe" variable in the training set. Details on the background and data can be found at [Coursera Project Instructions](https://www.coursera.org/learn/practical-machine-learning/supplement/PvInj/course-project-instructions-read-first%5D) or [Human Active Recognition](https://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har) (via web.archive.org).
+The approach is to 
+
+1. download and pre-process the data to enable and speed-up typical ML algorithms
+2. apply some suitable algorithms and compare accuracy
+3. select the best algorithm and apply it to the task of 20 test cases.
+4. All training, predicting and evaluation is done with the caret package.
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(
@@ -14,7 +20,6 @@ knitr::opts_chunk$set(
 	message = TRUE,
 	warning = FALSE
 )
-
 library(tidyverse)
 library(caret)
 library(rattle)
@@ -22,7 +27,7 @@ library(rattle)
 
 # 2. Data
 
-The data can be found here: [training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and [testing](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv). The data consists of 160 variables and \~20.000 rows (training) and 20 rows (task/validation). We clean the data and remove:
+The data can be downloaded from here: [training](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and [task/validation](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv). It consists of 160 variables and \~20.000 rows (training) and 20 rows (task/validation), respectively. We clean the data and remove:
 
 * first 5 columns as they do not help predicting
 * columns without relevant content "", "#DIV/0!", ...
@@ -93,37 +98,13 @@ table(training_final$classe)
 
 ```
 
-The outcome is in the variable "classe" is one out of "A", "B", "C", "D", "E".
+The outcome is in the variable "classe" (last column) is one out of "A", "B", "C", "D", "E". Class "A" corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. 
 
 # 3. Modelling
 
-## 3.1 Linear Model
+## 3.1 Decision tree
 
-```{r train linear}
-#specify the cross-validation method
-ctrl <- trainControl(method = "cv", number = 5)
-
-fit_linear <- train(classe ~., 
-             method="glm", 
-             data =training_final, 
-             trControl = ctrl,
-             na.action = na.exclude)
-
-predict_linear <- predict(fit_linear, testing_final)
-
-fancyRpartPlot(fit_linear$finalModel)
-
-cm_linar <- confusionMatrix(predict_linear, testing_final$classe)
-
-plot(cm_linar$table, 
-     col = cm_linar$byClass, 
-     main = paste("Decision Tree - Accuracy =",
-                  round(cm_linar$overall['Accuracy'], 
-                        4)))
-```
-
-
-## 3.2 Decision tree
+The first model to try is a decision tree with 5-fold cross-validation:
 ```{r train tree}
 #specify the cross-validation method
 ctrl <- trainControl(method = "cv", number = 5)
@@ -145,6 +126,74 @@ plot(cm_tree$table,
      main = paste("Decision Tree - Accuracy =",
                   round(cm_tree$overall['Accuracy'], 
                         4)))
+
 ```
 
-## 3.3 Random Forrest
+The classification tree achieves an accuracy of only `r cm_tree$overall[["Accuracy"]]` - so rather low. Classe "D" has not been assigned at all.
+
+## 3.2 Linear Discriminant Analysis
+
+The second model is of type LDA, also with 5-fold cross-validation:
+```{r train lda}
+#specify the cross-validation method
+ctrl <- trainControl(method = "cv", number = 5)
+
+fit_lda <- train(classe ~., 
+             method="lda", 
+             data =training_final, 
+             trControl = ctrl,
+             na.action = na.exclude)
+
+predict_lda <- predict(fit_lda, testing_final)
+
+cm_lda <- confusionMatrix(predict_lda, testing_final$classe)
+cm_lda
+# plot(cm_lda$table, 
+#      col = cm_lda$byClass, 
+#      main = paste("Decision Tree - Accuracy =",
+#                   round(cm_lda$overall['Accuracy'], 
+#                         4)))
+
+```
+
+LDA achieves an accuracy of `r cm_lda$overall[["Accuracy"]]` - much better than the simple tree. LDA delivers all possible results of the variable Classe. Let's see, if we can do better ...
+
+## 3.3 Random Forest
+
+Finally, we try a random forest approach without cross validation:
+```{r train rf}
+#specify the cross-validation method
+# ctrl <- trainControl(method = "cv", number = 5)
+
+fit_rf <- train(classe ~., 
+             method="rf", 
+             data =training_final,
+             na.action = na.exclude,
+             prox = TRUE)
+
+predict_rf <- predict(fit_rf, testing_final)
+
+fancyRpartPlot(fit_rf$finalModel)
+
+cm_rf <- confusionMatrix(predict_rf, testing_final$classe)
+cm_rf
+
+plot(cm_rf$table, 
+     col = cm_rf$byClass, 
+     main = paste("Decision Tree - Accuracy =",
+                  round(cm_rf$overall['Accuracy'], 
+                        4)))
+```
+
+Random forest achieves an accuracy of `r cm_rf$overall[["Accuracy"]]` which is the hghest value of all algorithms. With random forest we expect an out of sample error of about `r ceiling(10-10*cm_rf$overall[["Accuracy"]])/10`,
+
+
+## 4. Prediction / Application
+
+Since the random forest model shows the highest accuracy, we use it for our prediction task. The 20 test cases are predicted to be:
+```{r task}
+predict_task <- predict(fit_rf, task_final)
+predict_task
+```
+
+by Boris Blazej, 08.03.2022
