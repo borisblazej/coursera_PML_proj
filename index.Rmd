@@ -1,6 +1,8 @@
 ---
 title: "Practical Machine Learning | Course Project"
-output: html_notebook
+output: html_document
+author: "Boris Blazej"
+date: "March 09, 2022"
 ---
 
 # 1. Introduction
