@@ -102,7 +102,7 @@ The outcome is in the variable "classe" (last column) is one out of "A", "B", "C
 
 # 3. Modelling
 
-## 3.1 Decision tree
+## 3.1 Decision tree (rpart)
 
 The first model to try is a decision tree with 5-fold cross-validation:
 ```{r train tree}
@@ -117,15 +117,16 @@ fit_tree <- train(classe ~.,
 
 predict_tree <- predict(fit_tree, testing_final)
 
-#fancyRpartPlot(fit_tree$finalModel)
-
 cm_tree <- confusionMatrix(predict_tree, testing_final$classe)
+cm_tree
 
-plot(cm_tree$table, 
-     col = cm_tree$byClass, 
-     main = paste("Decision Tree - Accuracy =",
-                  round(cm_tree$overall['Accuracy'], 
-                        4)))
+fancyRpartPlot(fit_tree$finalModel)
+
+# plot(cm_tree$table, 
+#      col = cm_tree$byClass, 
+#      main = paste("Decision Tree - Accuracy =",
+#                   round(cm_tree$overall['Accuracy'], 
+#                         4)))
 
 ```
 
@@ -148,17 +149,17 @@ predict_lda <- predict(fit_lda, testing_final)
 
 cm_lda <- confusionMatrix(predict_lda, testing_final$classe)
 cm_lda
-# plot(cm_lda$table, 
-#      col = cm_lda$byClass, 
-#      main = paste("Decision Tree - Accuracy =",
-#                   round(cm_lda$overall['Accuracy'], 
-#                         4)))
+plot(cm_lda$table,
+     col = cm_lda$byClass,
+     main = paste("Decision Tree - Accuracy =",
+                  round(cm_lda$overall['Accuracy'],
+                        4)))
 
 ```
 
 LDA achieves an accuracy of `r cm_lda$overall[["Accuracy"]]` - much better than the simple tree. LDA delivers all possible results of the variable Classe. Let's see, if we can do better ...
 
-## 3.3 Random Forest
+## 3.3 Random Forest (ranger)
 
 Finally, we try a random forest approach without cross validation:
 ```{r train rf}
@@ -166,14 +167,11 @@ Finally, we try a random forest approach without cross validation:
 # ctrl <- trainControl(method = "cv", number = 5)
 
 fit_rf <- train(classe ~., 
-             method="rf", 
+             method="ranger",  # rf computationally too intensive
              data =training_final,
-             na.action = na.exclude,
-             prox = TRUE)
+             verboseIter=FALSE)
 
 predict_rf <- predict(fit_rf, testing_final)
-
-fancyRpartPlot(fit_rf$finalModel)
 
 cm_rf <- confusionMatrix(predict_rf, testing_final$classe)
 cm_rf
@@ -185,7 +183,7 @@ plot(cm_rf$table,
                         4)))
 ```
 
-Random forest achieves an accuracy of `r cm_rf$overall[["Accuracy"]]` which is the hghest value of all algorithms. With random forest we expect an out of sample error of about `r ceiling(10-10*cm_rf$overall[["Accuracy"]])/10`,
+Random forest achieves an accuracy of `r cm_rf$overall[["Accuracy"]]` which is the highest value of all algorithms. With random forest we expect an out of sample error of about `r ceiling(10-10*cm_rf$overall[["Accuracy"]])/10`,
 
 
 ## 4. Prediction / Application
